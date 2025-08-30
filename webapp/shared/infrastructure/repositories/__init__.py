@@ -44,6 +44,10 @@ class UserRepositoryInterface(ABC):
     @abstractmethod
     def exists_by_email(self, email: str) -> bool:
         pass
+    
+    @abstractmethod
+    def check_password(self, username: str, password: str) -> bool:
+        pass
 
 
 class ProjectRepositoryInterface(ABC):
