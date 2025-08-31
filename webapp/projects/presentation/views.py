@@ -10,6 +10,7 @@ from serializers import ProjectSerializer
 from utils.user_utils import get_connected_user
 from webapp.projects.application.use_cases import (
     CreateProjectUseCase,
+    DeleteProjectUseCase,
     EditProjectUseCase,
 )
 from webapp.projects.infrastructure.repositories import ProjectRepository
@@ -117,5 +118,39 @@ class EditProjectAPIView(APIView):
             logging.exception(f"Error during project editing: {e}")
             return Response(
                 {"error": "Project editing failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DeleteProjectAPIView(APIView):
+
+    @swagger_auto_schema(
+        operation_id="delete_project",
+        operation_description="Endpoint for the deletion of a project",
+        operation_summary="Delete a project",
+        responses={
+            200: '{"message": "Project deleted successfully !"}',
+            404: '{"error": "You are not connected !"}',
+            500: '{"error": "Project deletion failed"}',
+        },
+        tags=["Projects"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def delete(self, request, id: str, *args, **kwargs):
+        connected_user = get_connected_user(request)
+        use_case = DeleteProjectUseCase(ProjectRepository(), UserRepository())
+
+        try:
+            _ = use_case.execute(owner_id=connected_user.id, project_id=id)
+
+            return Response(
+                {"message": "Project deleted successfully !"}, status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logging.exception(f"Error during project editing: {e}")
+            return Response(
+                {"error": "Project deletion failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
