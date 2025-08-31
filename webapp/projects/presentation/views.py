@@ -8,9 +8,15 @@ from rest_framework.views import APIView
 from middlewares.auth_middleware import check_user_is_connected
 from serializers import ProjectSerializer
 from utils.user_utils import get_connected_user
-from webapp.projects.application.use_cases import CreateProjectUseCase
+from webapp.projects.application.use_cases import (
+    CreateProjectUseCase,
+    EditProjectUseCase,
+)
 from webapp.projects.infrastructure.repositories import ProjectRepository
-from webapp.projects.presentation.serializers import CreateProjectSerializer
+from webapp.projects.presentation.serializers import (
+    CreateProjectSerializer,
+    EditProjectSerializer,
+)
 from webapp.users.infrastructure.repositories import UserRepository
 
 
@@ -60,5 +66,56 @@ class CreateProjectAPIView(APIView):
             logging.exception(f"Error during project creation: {e}")
             return Response(
                 {"error": "Project creation failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class EditProjectAPIView(APIView):
+    serializer_class = EditProjectSerializer
+
+    @swagger_auto_schema(
+        operation_id="edit_project",
+        operation_description="Endpoint for the editing of a project",
+        operation_summary="Edit a project",
+        request_body=EditProjectSerializer(),
+        responses={
+            200: ProjectSerializer(),
+            400: '{"error": "Invalid data provided for project editing"}',
+            404: '{"error": "You are not connected !"}',
+            500: '{"error": "Project editing failed"}',
+        },
+        tags=["Projects"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def put(self, request, id: str, *args, **kwargs):
+        serialized = self.serializer_class(data=request.data)
+        if not serialized.is_valid():
+            logging.exception(serialized.errors)
+            return Response(
+                {"error": "Invalid data provided for project editing"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        connected_user = get_connected_user(request)
+        validated_data = serialized.validated_data
+        use_case = EditProjectUseCase(ProjectRepository(), UserRepository())
+
+        try:
+            updated_project = use_case.execute(
+                owner_id=connected_user.id,
+                project_id=id,
+                title=validated_data.get("title"),
+                description=validated_data.get("description"),
+            )
+
+            return Response(
+                ProjectSerializer(updated_project).data, status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logging.exception(f"Error during project editing: {e}")
+            return Response(
+                {"error": "Project editing failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
