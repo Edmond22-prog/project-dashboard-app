@@ -6,8 +6,8 @@ class BaseRepository(ABC):
     """Abstract base repository interface"""
 
     @abstractmethod
-    def get_by_uuid(self, uuid: str):
-        """Get entity by UUID"""
+    def get_by_id(self, entity_id: str):
+        """Get entity by ID"""
         pass
 
     @abstractmethod

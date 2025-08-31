@@ -11,10 +11,10 @@ from webapp.shared.infrastructure.repositories import (
 class UserRepository(BaseRepository, UserRepositoryInterface):
     """Repository for User entity operations"""
 
-    def get_by_uuid(self, uuid):
+    def get_by_id(self, id):
         """Get user by ID"""
         try:
-            return User.objects.get(id=uuid)
+            return User.objects.get(id=id)
 
         except User.DoesNotExist:
             return None
