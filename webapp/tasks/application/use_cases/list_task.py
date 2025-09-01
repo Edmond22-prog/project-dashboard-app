@@ -68,5 +68,5 @@ class ListTasksUseCase:
             "size": size,
             "total": total,
             "more": end < total,
-            "projects": searched_tasks[start:end] if searched_tasks else [],
+            "tasks": searched_tasks[start:end] if searched_tasks else [],
         }
