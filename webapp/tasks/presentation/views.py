@@ -9,9 +9,10 @@ from middlewares.auth_middleware import check_user_is_connected
 from serializers import TaskSerializer
 from utils.user_utils import get_connected_user
 from webapp.projects.infrastructure.repositories import ProjectRepository
-from webapp.tasks.application.use_cases import CreateTaskUseCase
+from webapp.tasks.application.use_cases import CreateTaskUseCase, ListTasksUseCase
 from webapp.tasks.infrastructure.repositories import TaskRepository
 from webapp.tasks.presentation.serializers import CreateTaskSerializer
+from webapp.users.infrastructure.repositories import UserRepository
 
 
 class CreateTaskAPIView(APIView):
@@ -63,5 +64,84 @@ class CreateTaskAPIView(APIView):
             logging.exception(f"Error during project creation: {e}")
             return Response(
                 {"error": "Project creation failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class RetrievePaginatedTasksAPIView(APIView):
+
+    @swagger_auto_schema(
+        operation_id="paginated_tasks",
+        operation_description="""
+        Endpoint for retrieving paginated tasks.
+        This endpoint will return **tasks** with pagination info: **page**, **size**, **total** and **more**
+        Filters options can be added to the url.
+        
+        ## URL PARAMETERS
+        ***page***: The current page of the pagination (default = 1)
+        ***size***: The size of returned items (default = 5)
+        ***query***: The user input for search
+        ***status***: The status value to filtering
+        ***project_id***: The project where to filtering
+        
+        ## Example
+        GET {BASE_URL}/api/tasks/list/?page=1&size=5&query=text&status=done
+        """,
+        operation_summary="Retrieve paginated tasks",
+        responses={
+            200: TaskSerializer(),
+            404: '{"error": "You are not connected !"}',
+            500: '{"error": "Tasks listing failed"}',
+        },
+        tags=["Tasks"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def get(self, request, *args, **kwargs):
+        page = 1
+        size = 5
+        query = ""
+        filter_status = None
+        project_id = None
+        if "page" in request.GET and request.GET["page"].strip() != "":
+            page = int(request.GET["page"])
+
+        if "size" in request.GET and request.GET["size"].strip() != "":
+            size = int(request.GET["size"])
+
+        if "query" in request.GET and request.GET["query"].strip() != "":
+            query = request.GET["query"]
+
+        if "status" in request.GET and request.GET["status"].strip() != "":
+            filter_status = request.GET["status"]
+
+        if "project_id" in request.GET and request.GET["project_id"].strip() != "":
+            project_id = request.GET["project_id"]
+
+        connected_user = get_connected_user(request)
+        use_case = ListTasksUseCase(
+            ProjectRepository(), UserRepository(), TaskRepository()
+        )
+
+        try:
+            paginated_tasks = use_case.execute(
+                user_id=connected_user.id,
+                page=page,
+                size=size,
+                query=query,
+                status=filter_status,
+                project_id=project_id,
+            )
+
+            paginated_tasks.update(
+                {"tasks": TaskSerializer(paginated_tasks["tasks"], many=True).data}
+            )
+
+            return Response(paginated_tasks, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logging.exception(f"Error during tasks listing: {e}")
+            return Response(
+                {"error": "Tasks listing failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
