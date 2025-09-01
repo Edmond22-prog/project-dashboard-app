@@ -56,6 +56,10 @@ class ProjectRepositoryInterface(ABC):
     def get_by_owner(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def is_owned_by(self, *args, **kwargs):
+        pass
+
 
 class TaskRepositoryInterface(ABC):
     """Interface for task repository"""
@@ -66,14 +70,6 @@ class TaskRepositoryInterface(ABC):
 
     @abstractmethod
     def get_by_user(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def search(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def filter_by_status(self, *args, **kwargs):
         pass
 
 

@@ -88,3 +88,10 @@ class ProjectRepository(BaseRepository, ProjectRepositoryInterface):
         """Delete project"""
         project.delete()
         return True
+
+    def is_owned_by(self, project, user_id):
+        """Check if the user is owner of a project"""
+        if project.owner.id == user_id:
+            return True
+
+        return False
