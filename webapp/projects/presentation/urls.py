@@ -4,10 +4,12 @@ from webapp.projects.presentation.views import (
     CreateProjectAPIView,
     DeleteProjectAPIView,
     EditProjectAPIView,
+    RetrievePaginatedProjectsAPIView,
 )
 
 urlpatterns = [
     path("create", CreateProjectAPIView.as_view()),
     path("<str:id>/edit", EditProjectAPIView.as_view()),
     path("<str:id>/delete", DeleteProjectAPIView.as_view()),
+    path("list", RetrievePaginatedProjectsAPIView.as_view()),
 ]

@@ -1,2 +1,2 @@
-from .project_serializer import ProjectSerializer
+from .project_serializer import ProjectSerializer, ProjectsWithTaskStatistics
 from .user_serializer import UserSerializer
