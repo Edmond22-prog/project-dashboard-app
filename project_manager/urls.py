@@ -40,4 +40,5 @@ urlpatterns = [
     path("api/v1/docs/", schema_view.with_ui("swagger", cache_timeout=0)),
     path("api/users/", include("webapp.users.presentation.urls")),
     path("api/projects/", include("webapp.projects.presentation.urls")),
+    path("api/tasks/", include("webapp.tasks.presentation.urls"))
 ]
