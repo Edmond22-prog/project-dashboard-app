@@ -20,17 +20,31 @@ class ProjectRepository(BaseRepository, ProjectRepositoryInterface):
         except Project.DoesNotExist:
             return None
 
-    def get_by_owner(self, user):
-        """Get all projects owned by user"""
-        return (
-            Project.objects.filter(owner=user)
-            .select_related("owner")
-            .order_by("-created_at")
-        )
+    def get_by_owner(self, user, filters_dict=None):
+        """Get all projects owned by user with filters"""
+        q = Q(owner=user)
+        distinct = False
+        if filters_dict:
+            if filters_dict.get("search_term", ""):
+                q &= Q(title__icontains=filters_dict["search_term"]) | Q(
+                    description__icontains=filters_dict["search_term"]
+                )
 
-    def get_with_task_statistics(self, user):
-        """Get projects with task statistics"""
-        return self.get_by_owner(user).annotate(
+            if filters_dict.get("status", ""):
+                distinct = True
+                q &= Q(tasks__status=filters_dict["status"])
+
+            if filters_dict.get("start_date", ""):
+                q &= Q(created_at__gte=filters_dict["start_date"])
+
+            if filters_dict.get("end_date", ""):
+                q &= Q(created_at__lte=filters_dict["end_date"])
+
+        projects = Project.objects.filter(q).select_related("owner")
+        if distinct:
+            projects = projects.distinct()
+
+        return projects.order_by("-created_at").annotate(
             total_tasks=Count("tasks"),
             completed_tasks=Count("tasks", filter=Q(tasks__status=TaskStatus.DONE)),
             total_estimated_time=Sum("tasks__estimated_time"),
@@ -74,24 +88,3 @@ class ProjectRepository(BaseRepository, ProjectRepositoryInterface):
         """Delete project"""
         project.delete()
         return True
-
-    def search(self, user, search_term):
-        """Search projects by title or description"""
-        return self.get_by_owner(user).filter(
-            Q(title__icontains=search_term) | Q(description__icontains=search_term)
-        )
-
-    def filter_by_task_status(self, user, status):
-        """Filter projects that have tasks with specific status"""
-        return self.get_by_owner(user).filter(tasks__status=status).distinct()
-
-    def filter_by_date_range(self, user, start_date, end_date):
-        """Filter projects by creation date range"""
-        queryset = self.get_by_owner(user)
-        if start_date:
-            queryset = queryset.filter(created_at__gte=start_date)
-
-        if end_date:
-            queryset = queryset.filter(created_at__lte=end_date)
-
-        return queryset
