@@ -12,12 +12,12 @@ class TimeEntry(BaseModel):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="time_entries")
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
-    duration = models.DurationField(null=True, blank=True)
+    duration = models.IntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         if self.start_time and self.end_time and not self.duration:
-            self.duration = self.end_time - self.start_time
+            self.duration = (self.end_time - self.start_time).seconds // 60
 
         super().save(*args, **kwargs)
     

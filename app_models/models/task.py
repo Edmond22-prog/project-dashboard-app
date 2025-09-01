@@ -15,11 +15,11 @@ class Task(BaseModel):
     status = models.CharField(
         max_length=20, choices=TASK_STATUS_CHOICES, default=TaskStatus.TODO
     )
-    estimated_time = models.DurationField(
-        null=True, blank=True, help_text="Estimated time in HH:MM format"
+    estimated_time = models.IntegerField(
+        null=True, blank=True, help_text="Estimated time in minutes format"
     )
-    spent_time = models.DurationField(
-        default=timedelta(0), help_text="Total time spent on this task"
+    spent_time = models.IntegerField(
+        default=0, help_text="Total time spent on this task in minutes"
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
 
