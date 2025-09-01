@@ -9,9 +9,16 @@ from middlewares.auth_middleware import check_user_is_connected
 from serializers import TaskSerializer
 from utils.user_utils import get_connected_user
 from webapp.projects.infrastructure.repositories import ProjectRepository
-from webapp.tasks.application.use_cases import CreateTaskUseCase, ListTasksUseCase
+from webapp.tasks.application.use_cases import (
+    CreateTaskUseCase,
+    EditTaskUseCase,
+    ListTasksUseCase,
+)
 from webapp.tasks.infrastructure.repositories import TaskRepository
-from webapp.tasks.presentation.serializers import CreateTaskSerializer
+from webapp.tasks.presentation.serializers import (
+    CreateTaskSerializer,
+    EditTaskSerializer,
+)
 from webapp.users.infrastructure.repositories import UserRepository
 
 
@@ -143,5 +150,58 @@ class RetrievePaginatedTasksAPIView(APIView):
             logging.exception(f"Error during tasks listing: {e}")
             return Response(
                 {"error": "Tasks listing failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class EditTaskAPIView(APIView):
+    serializer_class = EditTaskSerializer
+
+    @swagger_auto_schema(
+        operation_id="edit_task",
+        operation_description="Endpoint for the editing of a task",
+        operation_summary="Edit a task",
+        request_body=EditTaskSerializer(),
+        responses={
+            200: TaskSerializer(),
+            400: '{"error": "Invalid data provided for task editing"}',
+            404: '{"error": "You are not connected !"}',
+            500: '{"error": "Task editing failed"}',
+        },
+        tags=["Tasks"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def put(self, request, id: str, *args, **kwargs):
+        serialized = self.serializer_class(data=request.data)
+        if not serialized.is_valid():
+            logging.exception(serialized.errors)
+            return Response(
+                {"error": "Invalid data provided for task editing"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        connected_user = get_connected_user(request)
+        validated_data = serialized.validated_data
+        use_case = EditTaskUseCase(UserRepository(), TaskRepository())
+
+        try:
+            updated_project = use_case.execute(
+                user_id=connected_user.id,
+                task_id=id,
+                title=validated_data.get("title"),
+                description=validated_data.get("description"),
+                status=validated_data.get("status"),
+                estimated_time=validated_data.get("estimated_time"),
+            )
+
+            return Response(
+                TaskSerializer(updated_project).data, status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logging.exception(f"Error during task editing: {e}")
+            return Response(
+                {"error": "Task editing failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
