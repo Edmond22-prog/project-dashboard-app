@@ -11,6 +11,7 @@ from serializers.project_serializer import ProjectsWithTaskStatistics
 from utils.user_utils import get_connected_user
 from webapp.projects.application.use_cases import (
     CreateProjectUseCase,
+    DashboardOverviewUseCase,
     DeleteProjectUseCase,
     EditProjectUseCase,
     ListProjectUseCase,
@@ -20,6 +21,7 @@ from webapp.projects.presentation.serializers import (
     CreateProjectSerializer,
     EditProjectSerializer,
 )
+from webapp.tasks.infrastructure.repositories import TaskRepository
 from webapp.users.infrastructure.repositories import UserRepository
 
 
@@ -240,5 +242,40 @@ class RetrievePaginatedProjectsAPIView(APIView):
             logging.exception(f"Error during projects listing: {e}")
             return Response(
                 {"error": "Projects listing failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DashboardOverviewAPIView(APIView):
+
+    @swagger_auto_schema(
+        operation_id="dashboard_overview",
+        operation_description="""
+        Endpoint for retrieving dashboard overview on projects and tasks.
+        """,
+        operation_summary="Retrieve dashboard overview data",
+        responses={
+            200: "Dashboard Overview Data",
+            401: '{"error": "You are not connected !"}',
+            500: '{"error": "Dashboard overview retrieving failed"}',
+        },
+        tags=["Projects"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def get(self, request, *args, **kwargs):
+        connected_user = get_connected_user(request)
+        use_case = DashboardOverviewUseCase(
+            ProjectRepository(), TaskRepository(), UserRepository()
+        )
+
+        try:
+            dashboard_overview = use_case.execute(user_id=connected_user.id)
+            return Response(dashboard_overview, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logging.exception(f"Error during the dashboard overview retrieving: {e}")
+            return Response(
+                {"error": "Dashboard overview retrieving failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
