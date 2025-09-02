@@ -6,18 +6,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from middlewares.auth_middleware import check_user_is_connected
-from serializers import TaskSerializer
+from serializers import TaskSerializer, TaskTimeEntrySerializer
 from utils.user_utils import get_connected_user
 from webapp.projects.infrastructure.repositories import ProjectRepository
 from webapp.tasks.application.use_cases import (
     CreateTaskUseCase,
     EditTaskUseCase,
     ListTasksUseCase,
+    StartTimerUseCase,
 )
-from webapp.tasks.infrastructure.repositories import TaskRepository
+from webapp.tasks.infrastructure.repositories import TaskRepository, TimeEntryRepository
 from webapp.tasks.presentation.serializers import (
     CreateTaskSerializer,
     EditTaskSerializer,
+    StartTimerSerializer,
 )
 from webapp.users.infrastructure.repositories import UserRepository
 
@@ -203,5 +205,56 @@ class EditTaskAPIView(APIView):
             logging.exception(f"Error during task editing: {e}")
             return Response(
                 {"error": "Task editing failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class StartTaskTimerAPIView(APIView):
+    serializer_class = StartTimerSerializer
+
+    @swagger_auto_schema(
+        operation_id="start_timer",
+        operation_description="Endpoint for starting a task timer",
+        operation_summary="Start a task timer",
+        request_body=StartTimerSerializer(),
+        responses={
+            201: TaskTimeEntrySerializer(),
+            400: '{"error": "Invalid data provided for the start timer of a task"}',
+            404: '{"error": "You are not connected !"}',
+            500: '{"error": "Start timer of the task failed"}',
+        },
+        tags=["Tasks"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def post(self, request, *args, **kwargs):
+        serialized = self.serializer_class(data=request.data)
+        if not serialized.is_valid():
+            logging.exception(serialized.errors)
+            return Response(
+                {"error": "Invalid data provided for the start timer of a task"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        connected_user = get_connected_user(request)
+        validated_data = serialized.validated_data
+        use_case = StartTimerUseCase(
+            TaskRepository(), TimeEntryRepository(), UserRepository()
+        )
+
+        try:
+            started_timer = use_case.execute(
+                user_id=connected_user.id, task_id=validated_data["task_id"]
+            )
+
+            return Response(
+                TaskTimeEntrySerializer(started_timer).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logging.exception(f"Error during the start timer of a task: {e}")
+            return Response(
+                {"error": "Start timer of the task failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

@@ -17,3 +17,7 @@ class EditTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ("title", "description", "status", "estimated_time")
+
+
+class StartTimerSerializer(serializers.Serializer):
+    task_id = serializers.CharField()

@@ -1,3 +1,3 @@
 from .project_serializer import ProjectSerializer, ProjectsWithTaskStatistics
-from .task_serializer import TaskSerializer
+from .task_serializer import TaskSerializer, TaskTimeEntrySerializer
 from .user_serializer import UserSerializer
