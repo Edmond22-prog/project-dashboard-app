@@ -1,1 +1,2 @@
 from .task_repository import TaskRepository
+from .time_entry_repository import TimeEntryRepository
