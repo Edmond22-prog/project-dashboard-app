@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Union
 
 from webapp.shared import exceptions
@@ -50,7 +50,7 @@ class StartTimerUseCase:
         timer_data = {
             "user": existing_user,
             "task": existing_task,
-            "start_time": datetime.now(),
+            "start_time": datetime.now(timezone.utc),
             "is_active": True,
         }
 
