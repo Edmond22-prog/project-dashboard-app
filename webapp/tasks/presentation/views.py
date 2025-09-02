@@ -14,6 +14,7 @@ from webapp.tasks.application.use_cases import (
     EditTaskUseCase,
     ListTasksUseCase,
     StartTimerUseCase,
+    StopTimerUseCase,
 )
 from webapp.tasks.infrastructure.repositories import TaskRepository, TimeEntryRepository
 from webapp.tasks.presentation.serializers import (
@@ -256,5 +257,53 @@ class StartTaskTimerAPIView(APIView):
             logging.exception(f"Error during the start timer of a task: {e}")
             return Response(
                 {"error": "Start timer of the task failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class StopTaskTimerAPIView(APIView):
+    serializer_class = StartTimerSerializer
+
+    @swagger_auto_schema(
+        operation_id="stop_timer",
+        operation_description="Endpoint for stopping a task timer",
+        operation_summary="Stop a task timer",
+        request_body=StartTimerSerializer(),
+        responses={
+            200: "Duration of the task",
+            400: '{"error": "Invalid data provided for the stop timer of a task"}',
+            404: '{"error": "You are not connected !"}',
+            500: '{"error": "Stop timer of the task failed"}',
+        },
+        tags=["Tasks"],
+        security=[{"Bearer": []}],
+    )
+    @check_user_is_connected
+    def post(self, request, *args, **kwargs):
+        serialized = self.serializer_class(data=request.data)
+        if not serialized.is_valid():
+            logging.exception(serialized.errors)
+            return Response(
+                {"error": "Invalid data provided for the stop timer of a task"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        connected_user = get_connected_user(request)
+        validated_data = serialized.validated_data
+        use_case = StopTimerUseCase(
+            TaskRepository(), TimeEntryRepository(), UserRepository()
+        )
+
+        try:
+            task_duration = use_case.execute(
+                user_id=connected_user.id, task_id=validated_data["task_id"]
+            )
+
+            return Response(task_duration, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logging.exception(f"Error during the stop timer of a task: {e}")
+            return Response(
+                {"error": "Stop timer of the task failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
