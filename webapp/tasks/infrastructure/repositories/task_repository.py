@@ -1,4 +1,4 @@
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q, Sum
 
 from app_models.models.task import Task
 from app_models.models.time_entry import TimeEntry
@@ -88,6 +88,12 @@ class TaskRepository(BaseRepository, TaskRepositoryInterface):
     def get_tasks_by_status_count(self, user):
         """Get task count by status for dashboard"""
         return self.get_by_user(user).values("status").annotate(count=Count("id"))
+
+    def get_tasks_time_summary(self, user):
+        """Get task time summary for dashboard"""
+        return self.get_by_user(user).aggregate(
+            total_estimated=Sum("estimated_time"), total_spent=Sum("spent_time")
+        )
 
     def update_spent_time(self, task, duration):
         """Update task spent time by adding duration"""

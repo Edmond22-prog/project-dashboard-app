@@ -95,3 +95,12 @@ class ProjectRepository(BaseRepository, ProjectRepositoryInterface):
             return True
 
         return False
+
+    def get_with_time_spent(self, user):
+        """Get time spent per project for a user"""
+        return (
+            self.get_by_owner(user)
+            .annotate(total_time_spent=Sum("tasks__spent_time"))
+            .values("id", "title", "total_time_spent")
+            .order_by("-total_time_spent")
+        )
