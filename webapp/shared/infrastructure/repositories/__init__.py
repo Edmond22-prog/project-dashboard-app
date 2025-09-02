@@ -72,6 +72,10 @@ class TaskRepositoryInterface(ABC):
     def get_by_user(self, **kwargs):
         pass
 
+    @abstractmethod
+    def update_spent_time(self, *args, **kwargs):
+        pass
+
 
 class TimeEntryRepositoryInterface(ABC):
     """Interface for time entry repository"""
