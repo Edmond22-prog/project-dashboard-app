@@ -60,6 +60,10 @@ class ProjectRepositoryInterface(ABC):
     def is_owned_by(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def get_with_time_spent(self, **kwargs):
+        pass
+
 
 class TaskRepositoryInterface(ABC):
     """Interface for task repository"""
@@ -74,6 +78,14 @@ class TaskRepositoryInterface(ABC):
 
     @abstractmethod
     def update_spent_time(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_tasks_by_status_count(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_tasks_time_summary(self, **kwargs):
         pass
 
 
@@ -94,4 +106,8 @@ class TimeEntryRepositoryInterface(ABC):
 
     @abstractmethod
     def stop_active_timers_for_user(self, **kwargs):
+        pass
+    
+    @abstractmethod
+    def get_by_user(self, **kwargs):
         pass
