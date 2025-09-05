@@ -92,21 +92,13 @@ You can create a new user, or login with credentials:
 
 
 ## How much time you spent on this assignment and what you did/didn't like?
-```text
-    It took me almost 5 days to fully complete the rendering.
-```
+It took me almost 5 days to fully complete the rendering.
 
 ## What would you have done differently if you had had more time?
-```text
-    If I had more time, I would have configured user access differently so that they could or could not perform actions on objects that do not belong to them (projects, tasks)
-```
+If I had more time, I would have configured user access differently so that they could or could not perform actions on objects that do not belong to them (projects, tasks)
 
 ## With which parts of your application are you satisfied?
-```text
-    I am satisfied with the project architecture, as it separates the core business from the Framework, thus facilitating migration. But I am also satisfied with the security of my APIs, particularly with the verification of the user making the requests.
-```
+I am satisfied with the project architecture, as it separates the core business from the Framework, thus facilitating migration. But I am also satisfied with the security of my APIs, particularly with the verification of the user making the requests.
 
 ## Which parts would need improvement?
-```text
-    There should be an improvement at the task level. It would be necessary to change the status of a task when starting or stopping the timer for a task. It will also be necessary to allow each user to see all projects and tasks, without being able to modify them.
-```
+There should be an improvement at the task level. It would be necessary to change the status of a task when starting or stopping the timer for a task. It will also be necessary to allow each user to see all projects and tasks, without being able to modify them.
