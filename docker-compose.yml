@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: project_dashboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    # Check every 5s if PostgreSQL accept connexions
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: [ "./entrypoint.sh" ]
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_ENGINE: django.db.backends.postgresql
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: project_dashboard
+      DATABASE_USER: postgres
+      DATABASE_USER_PASSWORD: postgres
+    depends_on:
+      db:
+      # Wait until the service is healthy (until it accept connexions)
+        condition: service_healthy
+
+volumes:
+  postgres_data:
